@@ -55,6 +55,15 @@ final class FakeProvider implements ProviderInterface
         return new FakeEmbeddingResponse([0.1, 0.2, 0.3]);
     }
 
+    public function embedBatch(array $inputs, array $options = []): array
+    {
+        $results = [];
+        foreach ($inputs as $input) {
+            $results[] = $this->embed($input, $options);
+        }
+        return $results;
+    }
+
     public function supports(string $capability): bool
     {
         return match ($capability) {

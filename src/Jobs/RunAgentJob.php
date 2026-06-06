@@ -14,6 +14,8 @@ use LLMesh\Core\Agents\Agent;
 use LLMesh\Core\Contracts\MemoryStoreInterface;
 use LLMesh\Core\Contracts\ProviderInterface;
 use LLMesh\Laravel\Events\AgentCompleted;
+use LLMesh\Laravel\Events\AgentJobFailed;
+use LLMesh\Core\Exceptions\LLMeshException;
 
 /**
  * Queue-able job that runs the LLMesh Agent loop in the background.
@@ -74,26 +76,42 @@ class RunAgentJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $provider = $this->resolveProvider();
-        $memory   = app(MemoryStoreInterface::class);
+        try {
+            $provider = $this->resolveProvider();
+            $memory   = app(MemoryStoreInterface::class);
 
-        // Build tool instances from class names
-        $tools = array_map(
-            static fn (string $class): object => app($class),
-            $this->options->toolClasses,
-        );
+            // Build tool instances from class names
+            $tools = array_map(
+                static fn (string $class): object => app($class),
+                $this->options->toolClasses,
+            );
 
-        $agent = Agent::make(
-            provider:     $provider,
-            systemPrompt: $this->options->systemPrompt,
-            tools:        $tools,
-            maxSteps:     $this->options->maxSteps,
-        )->withMemory($memory, $this->sessionId);
+            $agent = Agent::make(
+                provider:     $provider,
+                systemPrompt: $this->options->systemPrompt,
+                tools:        $tools,
+                maxSteps:     $this->options->maxSteps,
+            )->withMemory($memory, $this->sessionId);
 
-        $result = $agent->run($this->options->prompt);
+            $result = $agent->run($this->options->prompt);
 
-        // Fire the completion event so listeners can react
-        Event::dispatch(new AgentCompleted($result, $this->sessionId));
+            // Fire the completion event so listeners can react
+            Event::dispatch(new AgentCompleted($result, $this->sessionId));
+        } catch (LLMeshException $e) {
+            Event::dispatch(new AgentJobFailed(
+                sessionId: $this->sessionId,
+                exception: $e,
+                agentOptions: (array) $this->options,
+            ));
+            throw $e;
+        } catch (\Throwable $e) {
+            Event::dispatch(new AgentJobFailed(
+                sessionId: $this->sessionId,
+                exception: $e,
+                agentOptions: (array) $this->options,
+            ));
+            throw $e;
+        }
     }
 
     // =========================================================================

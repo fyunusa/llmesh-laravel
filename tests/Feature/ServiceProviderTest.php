@@ -81,4 +81,23 @@ class ServiceProviderTest extends TestCase
         // In our test env, only 'fake' has a key, so only fake is bound
         $this->assertFalse($this->app->bound('llmesh.provider.openai'));
     }
+
+    public function testConfigIsPublishedToCorrectPath(): void
+    {
+        // Trigger the publish
+        $this->artisan('vendor:publish', [
+            '--tag' => 'llmesh-config',
+            '--force' => true,
+        ])->assertExitCode(0);
+
+        // Assert config file was published
+        $this->assertFileExists(config_path('llmesh.php'));
+
+        // Assert published config has expected keys
+        $config = include config_path('llmesh.php');
+        $this->assertArrayHasKey('default', $config);
+        $this->assertArrayHasKey('providers', $config);
+        $this->assertArrayHasKey('memory', $config);
+        $this->assertArrayHasKey('retry', $config);
+    }
 }

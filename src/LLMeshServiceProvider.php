@@ -48,12 +48,13 @@ class LLMeshServiceProvider extends ServiceProvider
      */
     private function registerManager(): void
     {
-        $this->app->singleton(
-            \LLMesh\Laravel\LLMeshManager::class,
-            fn ($app) => new \LLMesh\Laravel\LLMeshManager(
+        $this->app->singleton('llmesh', function ($app) {
+            return new \LLMesh\Laravel\LLMeshManager(
                 $app->make(ProviderInterface::class),
-            ),
-        );
+            );
+        });
+
+        $this->app->alias('llmesh', \LLMesh\Laravel\LLMeshManager::class);
     }
 
     /**

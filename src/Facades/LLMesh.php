@@ -53,6 +53,6 @@ class LLMesh extends Facade
      */
     protected static function getFacadeAccessor(): string
     {
-        return \LLMesh\Laravel\LLMeshManager::class;
+        return 'llmesh';
     }
 }
