@@ -21,7 +21,7 @@
     ],
     "require": {
         "php": "^8.1",
-        "llmesh/core": "^0.1",
+        "llmesh/core": "dev-main || ^0.1",
         "laravel/framework": "^10.0|^11.0"
     },
     "require-dev": {

@@ -114,13 +114,12 @@ class LLMeshServiceProvider extends ServiceProvider
 
                 $this->app->singletonIf(
                     "llmesh.provider.{$name}",
-                    static function () use ($class, $providerConfig): ProviderInterface {
-                        return new $class(
+                    function () use ($class, $providerConfig): ProviderInterface {
+                        return $this->resolveProviderInstance(
+                            $class,
                             $providerConfig['api_key'],
-                            array_merge(
-                                ['model' => $providerConfig['model'] ?? null],
-                                $providerConfig['options'] ?? [],
-                            ),
+                            $providerConfig['model'] ?? null,
+                            $providerConfig['options'] ?? [],
                         );
                     },
                 );
@@ -153,12 +152,11 @@ class LLMeshServiceProvider extends ServiceProvider
                 $apiKey         = $providerConfig['api_key'] ?? null;
 
                 if ($class !== null && class_exists($class) && ! empty($apiKey)) {
-                    return new $class(
+                    return $this->resolveProviderInstance(
+                        $class,
                         $apiKey,
-                        array_merge(
-                            ['model' => $providerConfig['model'] ?? null],
-                            $providerConfig['options'] ?? [],
-                        ),
+                        $providerConfig['model'] ?? null,
+                        $providerConfig['options'] ?? [],
                     );
                 }
 
@@ -247,5 +245,35 @@ class LLMeshServiceProvider extends ServiceProvider
             ProvidersCommand::class,
             ClearMemoryCommand::class,
         ]);
+    }
+
+    /**
+     * Resolve a ProviderInterface instance safely, checking constructor signature compatibility.
+     */
+    private function resolveProviderInstance(string $class, string $apiKey, ?string $model, array $options): ProviderInterface
+    {
+        $reflection = new \ReflectionClass($class);
+        $constructor = $reflection->getConstructor();
+        
+        if ($constructor) {
+            $params = $constructor->getParameters();
+            if (isset($params[1])) {
+                $type = $params[1]->getType();
+                if ($type instanceof \ReflectionNamedType && $type->getName() === 'array') {
+                    return new $class(
+                        $apiKey,
+                        array_merge(
+                            ['model' => $model],
+                            $options
+                        )
+                    );
+                }
+            }
+        }
+        
+        return new $class(
+            $apiKey,
+            $model ?? ''
+        );
     }
 }
