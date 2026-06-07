@@ -11,6 +11,20 @@
             "options": {
                 "symlink": true
             }
+        },
+        {
+            "type": "path",
+            "url": "../llmesh-openai",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../llmesh-anthropic",
+            "options": {
+                "symlink": true
+            }
         }
     ],
     "authors": [
@@ -26,7 +40,9 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0|^11.0",
-        "orchestra/testbench": "^8.0|^9.0"
+        "orchestra/testbench": "^8.0|^9.0",
+        "llmesh/openai": "*@dev",
+        "llmesh/anthropic": "*@dev"
     },
     "autoload": {
         "psr-4": {
